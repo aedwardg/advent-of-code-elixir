@@ -1,6 +1,6 @@
 defmodule FreqChecker do
   def find_duplicate(inputs) do
-    do_find_duplicate(inputs, 0, MapSet.new([0]))
+    do_find_duplicate(inputs)
   end
 
   defp do_find_duplicate(inputs, freq \\ 0, set \\ MapSet.new([0])) do
