@@ -22,17 +22,16 @@ IO.puts(checksum)
 
 # PART 2 
 common =
-  for i <- 0..(length(List.first(chars)) - 1), into: [] do
-    chars
-    |> Enum.map(&List.delete_at(&1, i))
-    |> Enum.map(&List.to_string/1)
-    |> Enum.group_by(& &1)
-    |> Map.values()
-    |> Enum.find(fn x -> length(x) > 1 end)
+  for i <- 0..(length(hd(chars)) - 1), reduce: [] do
+    acc ->
+      chars
+      |> Enum.map(&List.delete_at(&1, i))
+      |> Enum.map(&List.to_string/1)
+      |> Enum.group_by(& &1)
+      |> Enum.find_value(fn {_k, v} ->
+        if length(v) > 1, do: hd(v), else: nil
+      end) || acc
   end
-  |> Enum.reject(&is_nil/1)
-  |> List.flatten()
-  |> Enum.uniq()
 
 IO.puts("PART 2")
 IO.puts(common)
