@@ -1,6 +1,6 @@
 File.read!("./input.txt")
 |> String.split("\n\n", trim: true)
-|> Stream.map(fn s -> String.split(s, "\n", trim: true) end)
+|> Stream.map(&String.split(&1, "\n", trim: true))
 |> Stream.map(&Enum.map(&1, fn s -> String.to_integer(s) end))
 |> Stream.map(&Enum.sum/1)
 |> Enum.to_list()
