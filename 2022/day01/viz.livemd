@@ -53,5 +53,5 @@ Vl.new(title: "Calories Carried by Elf (top 50)", width: 600, height: 400)
 |> Vl.mark(:bar, corner_radius_end: 50)
 |> Vl.encode_field(:x, "names", sort: "-y", type: :nominal)
 |> Vl.encode_field(:y, "calories", type: :quantitative)
-|> Vl.encode_field(:color, "names", scale: %{scheme: "tableau20"})
+|> Vl.encode_field(:color, "names", sort: "-y", scale: %{scheme: "tableau20"})
 ```
