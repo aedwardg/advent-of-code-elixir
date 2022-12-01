@@ -1,5 +1,3 @@
-<!-- livebook:{"persist_outputs":true} -->
-
 # AoC 2022 Day 1 Visualization
 
 ## Section
@@ -12,23 +10,11 @@ Mix.install([
 ])
 ```
 
-<!-- livebook:{"output":true} -->
-
-```
-:ok
-```
-
 ```elixir
 # needed to use Explorer.DataFrame.arrange/2 macro
 require Explorer.DataFrame
 alias Explorer.DataFrame, as: DF
 alias VegaLite, as: Vl
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-VegaLite
 ```
 
 ```elixir
@@ -45,38 +31,11 @@ calories_per_elf =
   end)
 ```
 
-<!-- livebook:{"output":true} -->
-
-```
-%{
-  calories: [38252, 41937, 51188, 58285, 43078, 45587, 56076, 46519, 62151, 42746, 35921, 35910,
-   50241, 42389, 39813, 51411, 43252, 43573, 49345, 41810, 49765, 56985, 48396, 53215, 51824, 44964,
-   51676, 57955, 33354, 63623, 50645, 43525, 57259, 51870, 55557, 45147, 51004, 51883, 44823, 51171,
-   48761, 49711, 45088, 52447, 57084, 35055, 33678, 48113, 52215, ...],
-  names: ["Elf 93", "Elf 84", "Elf 214", "Elf 1", "Elf 17", "Elf 62", "Elf 140", "Elf 16",
-   "Elf 230", "Elf 206", "Elf 205", "Elf 169", "Elf 33", "Elf 69", "Elf 37", "Elf 107", "Elf 167",
-   "Elf 222", "Elf 42", "Elf 80", "Elf 228", "Elf 151", "Elf 66", "Elf 88", "Elf 73", "Elf 181",
-   "Elf 89", "Elf 39", "Elf 208", "Elf 8", "Elf 71", "Elf 200", "Elf 21", "Elf 134", "Elf 85",
-   "Elf 189", "Elf 166", "Elf 191", "Elf 47", "Elf 68", "Elf 56", "Elf 157", "Elf 15", "Elf 74",
-   "Elf 51", "Elf 54", "Elf 133", "Elf 194", ...]
-}
-```
-
 ```elixir
 sorted_elves =
   calories_per_elf
   |> DF.new()
   |> DF.arrange(desc: calories)
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-#Explorer.DataFrame<
-  Polars[242 x 2]
-  calories integer [66306, 64532, 64454, 64230, 63623, ...]
-  names string ["Elf 30", "Elf 159", "Elf 160", "Elf 52", "Elf 8", ...]
->
 ```
 
 ```elixir
@@ -95,10 +54,4 @@ Vl.new(title: "Calories Carried by Elf (top 50)", width: 600, height: 400)
 |> Vl.encode_field(:x, "names", sort: "-y", type: :nominal)
 |> Vl.encode_field(:y, "calories", type: :quantitative)
 |> Vl.encode_field(:color, "names", scale: %{scheme: "tableau20"})
-```
-
-<!-- livebook:{"output":true} -->
-
-```vega-lite
-{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"calories":66306,"names":"Elf 30"},{"calories":64532,"names":"Elf 159"},{"calories":64454,"names":"Elf 160"},{"calories":64230,"names":"Elf 52"},{"calories":63623,"names":"Elf 8"},{"calories":63339,"names":"Elf 132"},{"calories":62944,"names":"Elf 201"},{"calories":62852,"names":"Elf 176"},{"calories":62425,"names":"Elf 108"},{"calories":62355,"names":"Elf 180"},{"calories":62151,"names":"Elf 230"},{"calories":62119,"names":"Elf 172"},{"calories":61971,"names":"Elf 32"},{"calories":61574,"names":"Elf 229"},{"calories":60614,"names":"Elf 11"},{"calories":59823,"names":"Elf 92"},{"calories":59642,"names":"Elf 212"},{"calories":59355,"names":"Elf 123"},{"calories":59238,"names":"Elf 5"},{"calories":59004,"names":"Elf 14"},{"calories":58973,"names":"Elf 187"},{"calories":58896,"names":"Elf 190"},{"calories":58895,"names":"Elf 101"},{"calories":58291,"names":"Elf 22"},{"calories":58285,"names":"Elf 1"},{"calories":57955,"names":"Elf 39"},{"calories":57779,"names":"Elf 145"},{"calories":57720,"names":"Elf 110"},{"calories":57715,"names":"Elf 79"},{"calories":57512,"names":"Elf 171"},{"calories":57416,"names":"Elf 94"},{"calories":57259,"names":"Elf 21"},{"calories":57185,"names":"Elf 188"},{"calories":57182,"names":"Elf 143"},{"calories":57084,"names":"Elf 51"},{"calories":56985,"names":"Elf 151"},{"calories":56422,"names":"Elf 170"},{"calories":56422,"names":"Elf 223"},{"calories":56129,"names":"Elf 12"},{"calories":56076,"names":"Elf 140"},{"calories":56019,"names":"Elf 178"},{"calories":55827,"names":"Elf 18"},{"calories":55797,"names":"Elf 237"},{"calories":55557,"names":"Elf 85"},{"calories":55462,"names":"Elf 75"},{"calories":55349,"names":"Elf 131"},{"calories":55274,"names":"Elf 27"},{"calories":55098,"names":"Elf 26"},{"calories":54892,"names":"Elf 163"},{"calories":54657,"names":"Elf 164"}]},"encoding":{"color":{"field":"names","scale":{"scheme":"tableau20"}},"x":{"field":"names","sort":"-y","type":"nominal"},"y":{"field":"calories","type":"quantitative"}},"height":400,"mark":{"cornerRadiusEnd":50,"type":"bar"},"title":"Calories Carried by Elf (top 50)","width":600}
 ```
