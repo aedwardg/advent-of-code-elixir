@@ -4,7 +4,6 @@
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.4.0"},
   {:vega_lite, "~> 0.1.6"},
   {:kino_vega_lite, "~> 0.1.6"}
 ])
@@ -13,8 +12,6 @@ Mix.install([
 ## Setup
 
 ```elixir
-require Explorer.DataFrame
-alias Explorer.DataFrame, as: DF
 alias VegaLite, as: Vl
 ```
 
