@@ -1,0 +1,155 @@
+# AoC 2022 Day 2 Vizualization
+
+## Install Dependencies
+
+```elixir
+Mix.install([
+  {:explorer, "~> 0.4.0"},
+  {:vega_lite, "~> 0.1.6"},
+  {:kino_vega_lite, "~> 0.1.6"}
+])
+```
+
+## Setup
+
+```elixir
+require Explorer.DataFrame
+alias Explorer.DataFrame, as: DF
+alias VegaLite, as: Vl
+```
+
+```elixir
+# lol don't judge me
+defmodule RPS do
+  def get_score_one("A X", score), do: 4 + score
+  def get_score_one("A Y", score), do: 8 + score
+  def get_score_one("A Z", score), do: 3 + score
+  def get_score_one("B X", score), do: 1 + score
+  def get_score_one("B Y", score), do: 5 + score
+  def get_score_one("B Z", score), do: 9 + score
+  def get_score_one("C X", score), do: 7 + score
+  def get_score_one("C Y", score), do: 2 + score
+  def get_score_one("C Z", score), do: 6 + score
+
+  def get_score_two("A X", score), do: 3 + score
+  def get_score_two("A Y", score), do: 4 + score
+  def get_score_two("A Z", score), do: 8 + score
+  def get_score_two("B X", score), do: 1 + score
+  def get_score_two("B Y", score), do: 5 + score
+  def get_score_two("B Z", score), do: 9 + score
+  def get_score_two("C X", score), do: 2 + score
+  def get_score_two("C Y", score), do: 6 + score
+  def get_score_two("C Z", score), do: 7 + score
+
+  def get_elf_score_one("A X", score), do: 4 + score
+  def get_elf_score_one("A Y", score), do: 1 + score
+  def get_elf_score_one("A Z", score), do: 7 + score
+  def get_elf_score_one("B X", score), do: 8 + score
+  def get_elf_score_one("B Y", score), do: 5 + score
+  def get_elf_score_one("B Z", score), do: 2 + score
+  def get_elf_score_one("C X", score), do: 3 + score
+  def get_elf_score_one("C Y", score), do: 9 + score
+  def get_elf_score_one("C Z", score), do: 6 + score
+
+  def get_elf_score_two("A X", score), do: 4 + score
+  def get_elf_score_two("A Y", score), do: 7 + score
+  def get_elf_score_two("A Z", score), do: 1 + score
+  def get_elf_score_two("B X", score), do: 8 + score
+  def get_elf_score_two("B Y", score), do: 5 + score
+  def get_elf_score_two("B Z", score), do: 2 + score
+  def get_elf_score_two("C X", score), do: 9 + score
+  def get_elf_score_two("C Y", score), do: 6 + score
+  def get_elf_score_two("C Z", score), do: 3 + score
+end
+```
+
+```elixir
+# Get the plays
+plays =
+  File.read!("./input.txt")
+  |> String.split("\n", trim: true)
+```
+
+```elixir
+game_one_viz =
+  Vl.new(width: 500, height: 150)
+  |> Vl.encode_field(:x, "Names", type: :nominal, title: " ")
+  |> Vl.encode_field(:y, "Scores", type: :quantitative, title: " ")
+  |> Vl.layers([
+    Vl.new()
+    |> Vl.mark(:bar, size: 200)
+    |> Vl.encode_field(:color, "Names",
+      type: :nominal,
+      scale: [range: ["red", "green"]],
+      legend: false
+    ),
+    Vl.new()
+    |> Vl.mark(:text, baseline: "center", dy: 20, color: "white", font_size: 20)
+    |> Vl.encode_field(:text, "Scores", type: :quantitative, baseline: "top")
+  ])
+  |> Kino.VegaLite.new()
+  |> Kino.render()
+
+:ok
+```
+
+## Visualize game with first strategy
+
+```elixir
+Enum.reduce(plays, {0, 0}, fn play, {elf, me} ->
+  elf_score = RPS.get_elf_score_one(play, elf)
+  my_score = RPS.get_score_one(play, me)
+
+  data_to_plot = [
+    %{"Names" => "Elf", "Scores" => elf_score},
+    %{"Names" => "Me", "Scores" => my_score}
+  ]
+
+  Kino.VegaLite.clear(game_one_viz)
+  Kino.VegaLite.push_many(game_one_viz, data_to_plot)
+  Process.sleep(25)
+  {elf_score, my_score}
+end)
+```
+
+## Visualize game with second strategy
+
+```elixir
+game_two_viz =
+  Vl.new(width: 500, height: 150)
+  |> Vl.encode_field(:x, "Names", type: :nominal, title: " ")
+  |> Vl.encode_field(:y, "Scores", type: :quantitative, title: " ")
+  |> Vl.layers([
+    Vl.new()
+    |> Vl.mark(:bar, size: 200)
+    |> Vl.encode_field(:color, "Names",
+      type: :nominal,
+      scale: [range: ["red", "green"]],
+      legend: false
+    ),
+    Vl.new()
+    |> Vl.mark(:text, baseline: "center", dy: 20, color: "white", font_size: 20)
+    |> Vl.encode_field(:text, "Scores", type: :quantitative, baseline: "top")
+  ])
+  |> Kino.VegaLite.new()
+  |> Kino.render()
+
+:ok
+```
+
+```elixir
+Enum.reduce(plays, {0, 0}, fn play, {elf, me} ->
+  elf_score = RPS.get_elf_score_two(play, elf)
+  my_score = RPS.get_score_two(play, me)
+
+  data_to_plot = [
+    %{"Names" => "Elf", "Scores" => elf_score},
+    %{"Names" => "Me", "Scores" => my_score}
+  ]
+
+  Kino.VegaLite.clear(game_two_viz)
+  Kino.VegaLite.push_many(game_two_viz, data_to_plot)
+  Process.sleep(25)
+  {elf_score, my_score}
+end)
+```
