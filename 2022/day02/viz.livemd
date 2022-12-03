@@ -61,92 +61,66 @@ end
 ```
 
 ```elixir
+defmodule Viz do
+  def new do
+    Vl.new(width: 500, height: 150)
+    |> Vl.encode_field(:x, "Names", type: :nominal, title: " ")
+    |> Vl.encode_field(:y, "Scores", type: :quantitative, axis: %{grid: false}, title: " ")
+    |> Vl.layers([
+      Vl.new()
+      |> Vl.mark(:bar, size: 200, opacity: 0.6)
+      |> Vl.encode_field(:color, "Names",
+        type: :nominal,
+        scale: [range: ["red", "green"]],
+        legend: false
+      ),
+      Vl.new()
+      |> Vl.mark(:text, dy: 20, color: "white", font_size: 20, baseline: "top")
+      |> Vl.encode_field(:text, "Scores", type: :quantitative)
+    ])
+    |> Kino.VegaLite.new()
+    |> Kino.render()
+  end
+
+  def run(viz, plays, elf_score_fn, my_score_fn) do
+    Enum.reduce(plays, {0, 0, 1}, fn play, {elf, me, iteration} ->
+      elf_score = elf_score_fn.(play, elf)
+      my_score = my_score_fn.(play, me)
+
+      if rem(iteration, 50) == 0 do
+        data_to_plot = [
+          %{"Names" => "Elf", "Scores" => elf_score},
+          %{"Names" => "Me", "Scores" => my_score}
+        ]
+
+        Kino.VegaLite.clear(viz)
+        Kino.VegaLite.push_many(viz, data_to_plot)
+        Process.sleep(350)
+      end
+
+      {elf_score, my_score, iteration + 1}
+    end)
+  end
+end
+```
+
+```elixir
 # Get the plays
 plays =
   File.read!("./input.txt")
   |> String.split("\n", trim: true)
 ```
 
-```elixir
-game_one_viz =
-  Vl.new(width: 500, height: 150)
-  |> Vl.encode_field(:x, "Names", type: :nominal, title: " ")
-  |> Vl.encode_field(:y, "Scores", type: :quantitative, title: " ")
-  |> Vl.layers([
-    Vl.new()
-    |> Vl.mark(:bar, size: 200)
-    |> Vl.encode_field(:color, "Names",
-      type: :nominal,
-      scale: [range: ["red", "green"]],
-      legend: false
-    ),
-    Vl.new()
-    |> Vl.mark(:text, baseline: "center", dy: 20, color: "white", font_size: 20)
-    |> Vl.encode_field(:text, "Scores", type: :quantitative, baseline: "top")
-  ])
-  |> Kino.VegaLite.new()
-  |> Kino.render()
-
-:ok
-```
-
 ## Visualize game with first strategy
 
 ```elixir
-Enum.reduce(plays, {0, 0}, fn play, {elf, me} ->
-  elf_score = RPS.get_elf_score_one(play, elf)
-  my_score = RPS.get_score_one(play, me)
-
-  data_to_plot = [
-    %{"Names" => "Elf", "Scores" => elf_score},
-    %{"Names" => "Me", "Scores" => my_score}
-  ]
-
-  Kino.VegaLite.clear(game_one_viz)
-  Kino.VegaLite.push_many(game_one_viz, data_to_plot)
-  Process.sleep(25)
-  {elf_score, my_score}
-end)
+game_one_viz = Viz.new()
+Viz.run(game_one_viz, plays, &RPS.get_elf_score_one/2, &RPS.get_score_one/2)
 ```
 
 ## Visualize game with second strategy
 
 ```elixir
-game_two_viz =
-  Vl.new(width: 500, height: 150)
-  |> Vl.encode_field(:x, "Names", type: :nominal, title: " ")
-  |> Vl.encode_field(:y, "Scores", type: :quantitative, title: " ")
-  |> Vl.layers([
-    Vl.new()
-    |> Vl.mark(:bar, size: 200)
-    |> Vl.encode_field(:color, "Names",
-      type: :nominal,
-      scale: [range: ["red", "green"]],
-      legend: false
-    ),
-    Vl.new()
-    |> Vl.mark(:text, baseline: "center", dy: 20, color: "white", font_size: 20)
-    |> Vl.encode_field(:text, "Scores", type: :quantitative, baseline: "top")
-  ])
-  |> Kino.VegaLite.new()
-  |> Kino.render()
-
-:ok
-```
-
-```elixir
-Enum.reduce(plays, {0, 0}, fn play, {elf, me} ->
-  elf_score = RPS.get_elf_score_two(play, elf)
-  my_score = RPS.get_score_two(play, me)
-
-  data_to_plot = [
-    %{"Names" => "Elf", "Scores" => elf_score},
-    %{"Names" => "Me", "Scores" => my_score}
-  ]
-
-  Kino.VegaLite.clear(game_two_viz)
-  Kino.VegaLite.push_many(game_two_viz, data_to_plot)
-  Process.sleep(25)
-  {elf_score, my_score}
-end)
+game_two_viz = Viz.new()
+Viz.run(game_two_viz, plays, &RPS.get_elf_score_two/2, &RPS.get_score_two/2)
 ```
