@@ -5,7 +5,7 @@
 ```elixir
 Mix.install([
   {:vega_lite, "~> 0.1.6"},
-  {:kino_vega_lite, "~> 0.1.6"}
+  {:kino_vega_lite, github: "livebook-dev/kino_vega_lite"}
 ])
 ```
 
@@ -74,9 +74,8 @@ defmodule Viz do
 
     data_to_plot = data_from_boxes(new_boxes)
 
-    Kino.VegaLite.clear(viz)
     Kino.VegaLite.push_many(viz, data_to_plot, window: 9)
-    Process.sleep(50)
+    Process.sleep(25)
 
     move_crates(viz, instructions, new_boxes, num - 1, col_a, col_b)
   end
@@ -91,7 +90,6 @@ defmodule Viz do
 
     data_to_plot = data_from_boxes(new_boxes)
 
-    Kino.VegaLite.clear(viz)
     Kino.VegaLite.push_many(viz, data_to_plot, window: 9)
     Process.sleep(50)
 
