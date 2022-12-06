@@ -1,0 +1,194 @@
+# AOC 2022 Day 5 viz
+
+## Install Dependencies
+
+```elixir
+Mix.install([
+  {:vega_lite, "~> 0.1.6"},
+  {:kino_vega_lite, "~> 0.1.6"}
+])
+```
+
+## Setup
+
+```elixir
+alias VegaLite, as: Vl
+```
+
+```elixir
+defmodule Viz do
+  def new do
+    Vl.new(width: 500, height: 800)
+    |> Vl.encode_field(
+      :x,
+      "Stacks",
+      type: :nominal,
+      scale: %{
+        domain: [
+          "Stack 1",
+          "Stack 2",
+          "Stack 3",
+          "Stack 4",
+          "Stack 5",
+          "Stack 6",
+          "Stack 7",
+          "Stack 8",
+          "Stack 9"
+        ]
+      },
+      title: " "
+    )
+    |> Vl.encode_field(
+      :y,
+      "Crates",
+      type: :quantitative,
+      scale: %{domain: [0, 50]},
+      axis: %{grid: false},
+      title: " "
+    )
+    |> Vl.layers([
+      Vl.new()
+      |> Vl.mark(:bar, opacity: 0.6)
+      |> Vl.encode_field(:color, "Stacks",
+        type: :nominal,
+        scale: %{scheme: "tableau10"},
+        legend: false
+      ),
+      Vl.new()
+      |> Vl.mark(:text, dy: 2, font_size: 14, baseline: "top")
+      |> Vl.encode_field(:text, "TopCrate", type: :nominal)
+    ])
+    |> Kino.VegaLite.new()
+    |> Kino.render()
+  end
+
+  def move_crates(viz, instructions, boxes, 0, _, _), do: Crates.execute(viz, instructions, boxes)
+
+  def move_crates(viz, instructions, boxes, num, col_a, col_b) do
+    col_a_name = "Stack #{col_a}"
+    col_b_name = "Stack #{col_b}"
+
+    [from | rest] = boxes[col_a_name]
+    to = boxes[col_b_name]
+    new_boxes = %{boxes | col_a_name => rest, col_b_name => [from | to]}
+
+    data_to_plot = data_from_boxes(new_boxes)
+
+    Kino.VegaLite.clear(viz)
+    Kino.VegaLite.push_many(viz, data_to_plot, window: 9)
+    Process.sleep(50)
+
+    move_crates(viz, instructions, new_boxes, num - 1, col_a, col_b)
+  end
+
+  def move_crates_in_order(viz, instructions, boxes, num, col_a, col_b) do
+    col_a_name = "Stack #{col_a}"
+    col_b_name = "Stack #{col_b}"
+
+    {from, rest} = Enum.split(boxes[col_a_name], num)
+    to = boxes[col_b_name]
+    new_boxes = %{boxes | col_a_name => rest, col_b_name => from ++ to}
+
+    data_to_plot = data_from_boxes(new_boxes)
+
+    Kino.VegaLite.clear(viz)
+    Kino.VegaLite.push_many(viz, data_to_plot, window: 9)
+    Process.sleep(50)
+
+    Crates.execute(viz, instructions, new_boxes, true)
+  end
+
+  defp data_from_boxes(boxes) do
+    boxes
+    |> Enum.map(fn {k, v} ->
+      top = if Enum.empty?(v), do: "", else: hd(v)
+      %{"Stacks" => k, "Crates" => length(v), "TopCrate" => top}
+    end)
+  end
+end
+```
+
+```elixir
+defmodule Crates do
+  def separate_instructions(data) do
+    do_separate_instructions(data, {[], []})
+  end
+
+  defp do_separate_instructions([h | t] = data, {boxes, instructions}) do
+    if String.match?(h, ~r/move/) do
+      {Enum.reverse(boxes), data}
+    else
+      do_separate_instructions(t, {[h | boxes], instructions})
+    end
+  end
+
+  def parse_instructions(instructions) do
+    pattern = ~r/move (?<num>\d+) from (?<col_a>\d+) to (?<col_b>\d+)/
+
+    instructions
+    |> Enum.map(&Regex.named_captures(pattern, &1))
+    |> Enum.map(
+      &Map.new(&1, fn {k, v} ->
+        v = if k == "num", do: String.to_integer(v), else: v
+        {k, v}
+      end)
+    )
+  end
+
+  def to_stacks(boxes) do
+    boxes
+    |> Enum.map(&format_box/1)
+    |> Enum.zip()
+    |> Enum.map(fn box ->
+      Tuple.to_list(box)
+      |> Enum.join()
+      |> String.split(" ", trim: true)
+    end)
+    |> Enum.map(&Enum.drop(&1, -1))
+    |> Enum.with_index()
+    |> Map.new(fn {list, i} -> {"Stack #{i + 1}", list} end)
+  end
+
+  defp format_box(box) do
+    box
+    |> Kernel.<>(" ")
+    |> String.split("")
+    |> Enum.chunk_every(4)
+    |> Enum.reject(&(&1 == [""]))
+    |> Enum.concat()
+    |> Enum.reject(&String.match?(&1, ~r/^$/))
+    |> Enum.chunk_every(4)
+  end
+
+  def execute(viz, instructions, boxes, in_order \\ false)
+  def execute(_, [], boxes, _), do: boxes
+
+  def execute(viz, [h | t], boxes, in_order) do
+    if in_order do
+      Viz.move_crates_in_order(viz, t, boxes, h["num"], h["col_a"], h["col_b"])
+    else
+      Viz.move_crates(viz, t, boxes, h["num"], h["col_a"], h["col_b"])
+    end
+  end
+end
+```
+
+```elixir
+{boxes, moves} =
+  File.read!("./input.txt")
+  |> String.split("\n", trim: true)
+  |> Crates.separate_instructions()
+
+stacks = Crates.to_stacks(boxes)
+instructions = Crates.parse_instructions(moves)
+```
+
+```elixir
+part_one = Viz.new()
+Crates.execute(part_one, instructions, stacks)
+```
+
+```elixir
+part_two = Viz.new()
+Crates.execute(part_two, instructions, stacks, true)
+```
