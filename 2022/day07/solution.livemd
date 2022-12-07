@@ -1,0 +1,157 @@
+# AOC 2022 Day 07
+
+## Section
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.7.0"}
+])
+```
+
+## Inputs
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+test_input = Kino.Input.textarea("Input")
+```
+
+## Structs that ended up being useless and are now a shell of what they were when I originally built them out
+
+```elixir
+defmodule Dir do
+  defstruct contents: []
+end
+
+defmodule F do
+  defstruct [:name, size: 0]
+end
+```
+
+## The main functions
+
+```elixir
+defmodule Terminal do
+  def build(lines, current \\ nil, filesystem \\ %{})
+  def build([], _, filesystem), do: filesystem
+
+  def build([line | rest], current, filesystem) do
+    {current, filesystem} =
+      case line do
+        ["$", cmd, dir] -> command(cmd, current, dir, filesystem)
+        ["$", "ls"] -> {current, filesystem}
+        ["dir", name] -> add_dir(name, current, filesystem)
+        [size, name] -> add_file(String.to_integer(size), name, current, filesystem)
+      end
+
+    build(rest, current, filesystem)
+  end
+
+  defp command("cd", current, to, filesystem) do
+    case to do
+      "/" ->
+        if filesystem[to] do
+          {to, filesystem}
+        else
+          fs = filesystem |> Map.put(to, %Dir{})
+          {to, fs}
+        end
+
+      _ ->
+        path = Path.expand(to, current)
+
+        if filesystem[path] do
+          {path, filesystem}
+        else
+          fs = filesystem |> Map.put(path, %Dir{})
+          {path, fs}
+        end
+    end
+  end
+
+  defp add_dir(name, current, filesystem) do
+    curr = filesystem[current]
+    path = Path.expand(name, current)
+
+    content = [path | curr.contents]
+    fs = %{filesystem | current => %{curr | contents: content}}
+
+    {current, fs}
+  end
+
+  defp add_file(size, name, current, filesystem) do
+    curr = filesystem[current]
+    f = %F{name: name, size: size}
+
+    new_content = [f | curr.contents]
+
+    fs = %{filesystem | current => %{curr | contents: new_content}}
+
+    {current, fs}
+  end
+
+  def get_size(fs, name) do
+    fs[name].contents
+    |> Enum.map(fn x ->
+      case x do
+        %F{} -> x.size
+        _ -> get_size(fs, x)
+      end
+    end)
+    |> Enum.sum()
+  end
+end
+```
+
+## Get the data and build the file tree
+
+```elixir
+data =
+  Kino.Input.read(input)
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.split(&1, " "))
+```
+
+```elixir
+filesystem = data |> Terminal.build()
+```
+
+## Get all the sizes
+
+```elixir
+sizes =
+  filesystem
+  |> Enum.map(fn {k, _} ->
+    Terminal.get_size(filesystem, k)
+  end)
+```
+
+## Part 1
+
+```elixir
+sizes
+|> Enum.reduce(0, fn num, acc ->
+  if num > 100_000, do: acc, else: acc + num
+end)
+```
+
+## Part 2
+
+```elixir
+max_space = 70_000_000
+needed_space = 30_000_000
+
+[top | sorted] =
+  sizes
+  |> Enum.sort(:desc)
+
+free_space = max_space - top
+
+sizes
+|> Enum.filter(fn x ->
+  x + free_space >= needed_space
+end)
+|> Enum.min()
+```
