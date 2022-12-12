@@ -1,0 +1,134 @@
+# AoC 2022 Day 12
+
+## Install Kino for Livebook text input
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.8.0"}
+])
+```
+
+## Inputs
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Setup Priority Queue and Dijkstra
+
+Blatantly borrowed and modified from José Valim's [Dijkstra solution](https://github.com/josevalim/livebooks/blob/main/advent_of_code/2021/day-15.livemd) from 2021
+
+```elixir
+defmodule PQ do
+  def new() do
+    []
+  end
+
+  def add([{cur_weight, _} | _] = list, value, weight)
+      when weight <= cur_weight,
+      do: [{weight, value} | list]
+
+  def add([head | tail], value, weight),
+    do: [head | add(tail, value, weight)]
+
+  def add([], value, weight),
+    do: [{weight, value}]
+end
+```
+
+```elixir
+defmodule Dijkstra do
+  def shortest(graph, start, target) do
+    distances = %{start => 0}
+    queue = PQ.add(PQ.new(), start, 0)
+    recur(graph, distances, queue, target)
+  end
+
+  # Added this clause to account for part 2, when the queue runs out
+  defp recur(_, _, [], _), do: :infinity
+
+  defp recur(graph, distances, queue, target) do
+    [{_, {row, col} = u} | queue] = queue
+
+    if u == target do
+      distances[u]
+    else
+      neighbours =
+        [{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}]
+        |> Enum.filter(fn coord ->
+          graph[coord] && graph[coord] <= graph[u] + 1
+        end)
+
+      {distances, queue} =
+        for v <- neighbours,
+            Map.has_key?(graph, v),
+            distance_from_source = distances[u] + 1,
+            distance_from_source < Map.get(distances, v, :infinity),
+            reduce: {distances, queue} do
+          {distances, queue} ->
+            distances = Map.put(distances, v, distance_from_source)
+            queue = PQ.add(queue, v, distance_from_source)
+            {distances, queue}
+        end
+
+      recur(graph, distances, queue, target)
+    end
+  end
+end
+```
+
+## Setup the Graph (grid), and start/end nodes
+
+```elixir
+lines = input |> Kino.Input.read() |> String.split("\n", trim: true)
+
+grid =
+  for {line, row} <- Enum.with_index(lines),
+      {char, col} <- Enum.with_index(String.to_charlist(line)),
+      into: %{} do
+    {{col, row}, char}
+  end
+```
+
+```elixir
+{start, _} =
+  grid
+  |> Enum.find(&(elem(&1, 1) == ?S))
+```
+
+```elixir
+{target, _} =
+  grid
+  |> Enum.find(&(elem(&1, 1) == ?E))
+```
+
+```elixir
+grid = %{grid | start => ?a, target => ?z}
+```
+
+## Part 1
+
+```elixir
+Dijkstra.shortest(grid, start, target)
+```
+
+## Part 2
+
+```elixir
+all_starts =
+  grid
+  |> Enum.flat_map(fn {k, v} ->
+    case v do
+      ?a -> [k]
+      _ -> []
+    end
+  end)
+```
+
+```elixir
+all_starts
+|> Enum.map(fn coord ->
+  Dijkstra.shortest(grid, coord, target)
+end)
+|> Enum.min()
+```
