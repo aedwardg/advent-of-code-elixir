@@ -1,0 +1,99 @@
+# AoC 2022 Day 13
+
+## Get input
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.8.0"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Module for comparing signals
+
+```elixir
+defmodule Signal do
+  def compare({left, right, i}) do
+    compare_lists(left, right, i)
+  end
+
+  defp compare_lists([], [_r | _], i), do: i
+  defp compare_lists([_l | _], [], _i), do: nil
+  defp compare_lists(same, same, _i), do: :cont
+
+  defp compare_lists([l | l_rest], [r | r_rest], i) do
+    result =
+      case {l, r} do
+        {l, r} when is_integer(l) and is_integer(r) -> compare_ints(l, r, i)
+        {l, r} when is_integer(l) -> compare_lists([l], r, i)
+        {l, r} when is_integer(r) -> compare_lists(l, [r], i)
+        _ -> compare_lists(l, r, i)
+      end
+
+    if result == :cont, do: compare_lists(l_rest, r_rest, i), else: result
+  end
+
+  defp compare_ints(same, same, _i), do: :cont
+
+  defp compare_ints(l, r, i) do
+    if l < r, do: i, else: nil
+  end
+
+  def sort(left, right) do
+    compare_lists(left, right, true) != nil
+  end
+
+  def decoder_key(sorted, d1, d2) do
+    first = Enum.find_index(sorted, &(&1 == d1)) + 1
+    second = Enum.find_index(sorted, &(&1 == d2)) + 1
+    first * second
+  end
+end
+```
+
+## Part 1
+
+```elixir
+lines =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+
+pairs =
+  lines
+  |> Enum.chunk_every(2)
+  |> Enum.with_index(1)
+  |> Enum.map(fn {[l, r], i} ->
+    {result_l, _} = Code.eval_string(l)
+    {result_r, _} = Code.eval_string(r)
+    {result_l, result_r, i}
+  end)
+```
+
+```elixir
+pairs
+|> Enum.map(&Signal.compare(&1))
+|> Enum.reject(&is_nil(&1))
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+signals =
+  lines
+  |> Enum.map(&elem(Code.eval_string(&1), 0))
+```
+
+```elixir
+d1 = [[2]]
+d2 = [[6]]
+
+# Decoder key
+[d1, d2 | signals]
+|> Enum.sort(&Signal.sort/2)
+|> Signal.decoder_key(d1, d2)
+```
